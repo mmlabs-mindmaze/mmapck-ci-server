@@ -1,0 +1,101 @@
+#
+# @[copyright_header]@
+#
+# pylint: disable=invalid-name
+# pylint: disable=logging-format-interpolation
+# pylint: disable=wrong-import-position
+"""
+Simple script which listens to gerrit for merge events
+to create the updated package of the project.
+
+The package generated will only be uploaded to the configured repository
+on gerrit merge actions to allow users to repeatedly try to build even
+invalid packages creations.
+
+Note: this is intended to never fail.
+this explains some of the broad excepts, and flags like ignore_errors
+"""
+
+# imports
+from argparse import ArgumentParser, RawDescriptionHelpFormatter
+from typing import Dict
+
+from mmpack_build.common import yaml_load
+
+from common import init_logger
+from eventsrc import EventSource
+from eventsrc_gerrit import GerritEventSource
+from jobscheduler import JobScheduler
+
+
+# configuration global variable
+DEFAULT_CONFIGPATH = r'@sysconfdir@/mmpack-ci-server/config.yaml'
+DEFAULT_LOGPATH = r'@localstatedir@/log/mmpack-ci-server.log'
+
+
+def create_event_source(scheduler: JobScheduler,
+                        config: Dict[str, str]) -> EventSource:
+    """
+    Event source factory
+
+    args:
+        scheduler: JobScheduler to be associated with the created event source
+        config: dictionary of event source section of the parsed config file
+
+    Return:
+        The created event source
+    """
+    EVENT_SOURCES_CONSTRUCTORS = {
+        'gerrit': GerritEventSource,
+    }
+
+    srctype = config['type']
+    return EVENT_SOURCES_CONSTRUCTORS[srctype](scheduler, config)
+
+
+class CIApplication:
+    """
+    class encapsulating the state of the application
+    """
+    # pylint: disable=too-few-public-methods
+    def __init__(self, filename: str):
+        cfg = yaml_load(filename)
+
+        init_logger(cfg.get('logpath', DEFAULT_LOGPATH))
+
+        self.scheduler = JobScheduler(cfg)
+        self.eventsrc = create_event_source(self.scheduler, cfg['eventsrc'])
+
+    def run(self):
+        """
+        Execute event loop of the application
+        """
+        self.scheduler.start()
+        self.eventsrc.run()
+
+
+def parse_options():
+    """
+    parse and check options
+    """
+    parser = ArgumentParser(description=__doc__,
+                            formatter_class=RawDescriptionHelpFormatter)
+
+    parser.add_argument('-c', '--config', default=DEFAULT_CONFIGPATH,
+                        action='store', dest='configpath', type=str,
+                        help='path to configuration file')
+
+    return parser.parse_args()
+
+
+def main():
+    """
+    main function
+    """
+    args = parse_options()
+    ci_app = CIApplication(args.configpath)
+    ci_app.run()
+
+
+if __name__ == '__main__':
+    main()
