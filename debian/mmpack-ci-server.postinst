@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+
+if ! getent passwd mmpack-builder >/dev/null; then
+	adduser --quiet \
+	        --no-create-home --home /var/lib/mmpack-ci-server \
+	        --system --disabled-password --shell /bin/sh \
+	        --gecos "MMPACK builder,,," \
+		mmpack-builder
+
+	if ! [ -d /var/lib/mmpack-ci-server ]; then
+		mkdir -p /var/lib/mmpack-ci-server
+		chown mmpack-builder:root /var/lib/mmpack-ci-server
+	fi
+fi
+
+#DEBHELPER#
+
+exit 0

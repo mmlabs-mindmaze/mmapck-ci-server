@@ -1,0 +1,2 @@
+# file where the configuration will be read.
+CONFFILE=/var/lib/mmpack-builder/config.yml

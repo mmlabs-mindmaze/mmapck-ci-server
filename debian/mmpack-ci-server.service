@@ -1,0 +1,13 @@
+[Unit]
+Description=MMPACK repository updater
+After=network.target
+
+[Service]
+EnvironmentFile=/etc/default/mmpack-ci-server
+ExecStartPre=/usr/bin/test -e $CONFFILE
+ExecStart=/usr/bin/python3 /usr/share/mmpack-ci-server/main.py --config=$CONFFILE
+User=mmpack-builder
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
