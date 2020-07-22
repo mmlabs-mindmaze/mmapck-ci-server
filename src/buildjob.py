@@ -27,7 +27,8 @@ class BuildJob:
         self.do_upload = True
         self.pkgdir = ''
         self.build_id = ''
-        self.repo_name_set = set()
+        self.upload_repo = ''
+        self.archs = []
         self.srctar_make_opts = kwargs
 
     def __del__(self):

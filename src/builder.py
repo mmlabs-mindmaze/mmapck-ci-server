@@ -7,7 +7,7 @@ import os
 import stat
 import time
 import warnings
-from typing import Dict
+from typing import Dict, List
 
 import paramiko
 from cryptography.utils import DeprecatedIn25
@@ -152,10 +152,11 @@ class Builder:
 
     Currently only SSH connection to build server is supported
     """
-    def __init__(self, name, cfg: Dict[str, str]):
+    def __init__(self, name, cfg: Dict[str, str], deps_repos: Dict[str, dict]):
         self.base_workdir = cfg.get('builds-basedir',
                                     '/tmp/mmpack-builds/' + name)
-        self.deps_repos = {}
+        self.deps_repos = deps_repos
+        self.arch = cfg['architecture']
 
         # Configure SSH connection only with options in cfg understood by SSH()
         ssh_node_keys = ['hostname', 'username', 'port', 'keyfile', 'password']
@@ -165,7 +166,8 @@ class Builder:
     def __repr__(self):
         return repr(self.ssh_node)
 
-    def _gen_build_script(self, workdir: str, srctar: str):
+    def _gen_build_script(self, workdir: str, srctar: str,
+                          repo_list: List[str]):
         script = ['set -e',
                   'workdir={}'.format(workdir),
                   'srctar={}'.format(srctar),
@@ -173,8 +175,14 @@ class Builder:
                   'tmp_prefix=$workdir/tmp-prefix',
                   'mmpack mkprefix --force $tmp_prefix']
 
-        for name, url in self.deps_repos.items():
-            script.append('mmpack -p $tmp_prefix {} {}'.format(name, url))
+        # Add repositories for dependencies in temporary prefix
+        for name in repo_list:
+            url = self.deps_repos[name].get(self.arch)
+            if not url:
+                continue
+            reponame = name + '/' + self.arch
+            script.append('mmpack -p $tmp_prefix repo add {} {}'
+                          .format(reponame, url))
 
         script.append('mmpack-build pkg-create -y'
                       ' --prefix=$tmp_prefix'
@@ -194,11 +202,12 @@ class Builder:
         node = self.ssh_node
         remote_workdir = os.path.join(self.base_workdir, job.build_id)
         remote_srctar = os.path.join(remote_workdir, os.path.basename(job.srctar))
+        repo_list = job.deps_repos
 
         # upload source package to build slave node
         node.exec('mkdir -p ' + remote_workdir)
         node.put(job.srctar, remote_srctar)
-        cmd = self._gen_build_script(remote_workdir, remote_srctar)
+        cmd = self._gen_build_script(remote_workdir, remote_srctar, repo_list)
         node.exec(cmd)
 
         node.get(remote_workdir + '/mmpack-packages', job.pkgdir)  # retrieve packages

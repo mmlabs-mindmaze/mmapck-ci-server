@@ -64,14 +64,15 @@ class CIApplication:
         init_logger(cfg.get('logpath', DEFAULT_LOGPATH))
 
         self.scheduler = JobScheduler(cfg)
-        self.eventsrc = create_event_source(self.scheduler, cfg['eventsrc'])
+        self.eventsrc = {k: create_event_source(self.scheduler, v)
+                         for k, v in cfg['eventsrc'].items()}
 
     def run(self):
         """
         Execute event loop of the application
         """
         self.scheduler.start()
-        self.eventsrc.run()
+        list(self.eventsrc.values())[0].run()
 
 
 def parse_options():

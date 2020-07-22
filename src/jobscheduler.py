@@ -6,7 +6,6 @@ Source providing the adding and executing of build jobs
 import re
 from queue import Queue
 from threading import Thread, Lock
-from typing import Dict, List
 
 from repository import Repository
 
@@ -19,12 +18,17 @@ class FilterRule:
     """
     Class used to represent the action to take when a matching job is added
     """
-    def __init__(self, upload: List[str], patterns: Dict[str, str] = None):
-        if not patterns:
-            patterns = {}
+    def __init__(self, rule_cfg: dict, global_cfg: dict):
+        patterns = rule_cfg.get('patterns', {})
+        upload = rule_cfg['upload']
 
         self.regex_map = {k: re.compile(p) for k, p in patterns.items()}
-        self.repo_names = upload
+        self.upload_repo = upload
+        self.deps_repos = rule_cfg.get('dependency-repositories', [])
+
+        # get archs if specified, otherwise take all archs in the uploaded repo
+        self.archs = rule_cfg.get('built-architectures',
+                                  list(global_cfg['repositories'][upload].keys()))
 
     def match(self, job: BuildJob) -> bool:
         """
@@ -43,14 +47,16 @@ class FilterRule:
         Factory of all filter rules described in the config file. The created
         rules are returned in a dictionary.
         """
-        repo_names = list(config['repositories'].keys())
-
         rules = {}
         for key, cfg in config.get('rules', {}).items():
-            rules[key] = FilterRule(**cfg)
+            rules[key] = FilterRule(cfg, config)
 
         if not rules:
-            rules = {'default': FilterRule(upload=repo_names)}
+            repo_names = list(config['repositories'].keys())
+            if len(repo_names) > 1:
+                raise ValueError('multiple repositories,'
+                                 ' cannot create default rule')
+            rules = {'default': FilterRule({'upload': repo_names[0]}, config)}
 
         return rules
 
@@ -137,14 +143,36 @@ class JobScheduler(Thread):
     def __init__(self, config: dict):
         super().__init__()
         self.queue = Queue()
-        self.repos = {k: Repository(k, v['path'], v['architecture'])
-                      for k, v in config['repositories'].items()}
-        self.builder_queues = {k: _BuilderQueue(Builder(name=k, cfg=v))
+
+        # Read config and initialize repositories to upload to
+        self.repos = {}
+        for name, cfg in config['repositories'].items():
+            self.repos[name] = {arch: Repository(name + '/' + arch, v['path'], arch)
+                                for arch, v in cfg.items()}
+
+        # Read config and initialize mmpack repositories to fetch dependencies from
+        deps_repos = {}
+        for name, cfg in config['dependency-repositories'].items():
+            deps_repos[name] = {arch: v['url'] for arch, v in cfg.items()}
+
+        self.builder_queues = {k: _BuilderQueue(Builder(name=k, cfg=v,
+                                                        deps_repos=deps_repos))
                                for k, v in config['builders'].items()}
         self.rules = FilterRule.load_rules(config)
 
+    def _pick_builder_queue_for_arch(self, arch: str) -> _BuilderQueue:
+        matching = [q for q in self.builder_queues.values()
+                    if q.builder.arch == arch]
+
+        if not matching:
+            raise RuntimeError('No builder producing {} architecture'.format(arch))
+
+        matching.sort(key=lambda bq: bq.queue.qsize())
+        return matching[0]
+
     def _schedule_job_for_build(self, job: BuildJob):
-        builder_queues = self.builder_queues.values()
+        builder_queues = [self._pick_builder_queue_for_arch(arch)
+                          for arch in job.archs]
         num_build = len(builder_queues)
 
         scheduled_job = _BuildScheduledJob(job, self.queue, num_build)
@@ -164,8 +192,8 @@ class JobScheduler(Thread):
         try:
             # Update repositories
             manifest = job.merge_manifests()
-            for reponame in job.repo_name_set:
-                repo = self.repos[reponame]
+            for arch in job.archs:
+                repo = self.repos[job.upload_repo][arch]
                 modified_repos.append(repo)
                 repo.add(manifest)
 
@@ -174,6 +202,7 @@ class JobScheduler(Thread):
             for repo in modified_repos:
                 repo.rollback()
             job.notify_result(False, str(exception))
+            log_error('upload cancelled')
             return
 
         # Commit changes in modified repositories
@@ -226,10 +255,12 @@ class JobScheduler(Thread):
         """
         for rule in self.rules.values():
             if rule.match(job):
-                job.repo_name_set = rule.repo_names
+                job.upload_repo = rule.upload_repo
+                job.archs = rule.archs
+                job.deps_repos = rule.deps_repos
                 break
 
-        if not job.repo_name_set:
+        if not job.archs:
             return
 
         # Generate mmpack source
