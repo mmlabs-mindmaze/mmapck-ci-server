@@ -28,6 +28,10 @@ install_data(mmpack_ci_server_files,
     install_dir : get_option('datadir') / 'mmpack-ci-server',
 )
 
+install_data(
+    files('doc/examples/config.yaml'),
+    install_dir: get_option('datadir') / 'doc/mmpack-ci-server/examples/'
+)
 
 #
 # dev targets

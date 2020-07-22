@@ -1,0 +1,45 @@
+logpath: /var/lib/mmpack-builder/mmpack-repos/mmpack-ci-server.log
+repositories:
+    projecta:
+        amd64-debian:
+            path: /var/lib/mmpack-builder/mmpack-repos/debian
+        amd64-windows:
+            path: /var/lib/mmpack-builder/mmpack-repos/windows
+dependency-repositories:
+    project-a:
+        amd64-debian:
+            url: https://localhost/projecta/debian
+        amd64-windows:
+            url: https://localhost/projecta/windows
+    project-b:
+        amd64-debian:
+            url: https://projb.server.ai/mmpack/debian
+builders:
+    linux:
+        hostname: linux-server
+        username: builder-user
+        architecture: amd64-debian
+        builds-basedir: /home/builder-user/builds
+    windows:
+        hostname: win32-server
+        username: builder-user
+        architecture: amd64-windows
+        builds-basedir: /home/builder-user/builds
+eventsrc:
+    localgerrit:
+        type: gerrit
+        hostname: gerrit.server.com
+        username: gerrit-user
+rules:
+    only-linux:
+        upload: projecta
+        built-architectures: [amd64-debian]
+        dependency-repositories: [project-a, project-b]
+        patterns:
+            project: fordebian/.*
+    anyarch:
+        upload: projecta
+        built-architectures: [amd64-debian, amd64-windows]
+        dependency-repositories: [project-a]
+        patterns:
+            project: .*-(posix|win32)
