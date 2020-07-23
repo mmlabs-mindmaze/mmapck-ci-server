@@ -45,17 +45,25 @@ def _trigger_build(event):
     test whether an event is a merge event, or a manual trigger
     """
     try:
-        do_build = (event['type'] == 'change-merged'
-                    or (event['type'] == 'comment-added'
-                        and ('MMPACK_BUILD' in event['comment']
-                             or 'MMPACK_UPLOAD_BUILD' in event['comment'])))
-        do_upload = (event['type'] == 'change-merged'
-                     or (event['type'] == 'comment-added'
-                         and 'MMPACK_UPLOAD_BUILD' in event['comment']))
+        evttype = event['type']
+        if evttype not in ('change-merged', 'comment-added'):
+            return (False, False)
 
-        return do_build, do_upload
+        if evttype == 'change-merged':
+            return (True, True)
+
+        comment = event['comment']
+
+        if 'MMPACK_UPLOAD_BUILD' in comment:
+            return (True, True)
+
+        if 'MMPACK_BUILD' in comment:
+            return (True, False)
+
     except KeyError:
-        return False
+        pass
+
+    return (False, False)
 
 
 class GerritEventSource(EventSource):
