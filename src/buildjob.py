@@ -50,7 +50,8 @@ class BuildJob:
         srctarball = SourceTarball(method='git',
                                    outdir=self.pkgdir,
                                    path_url=self.url,
-                                   tag=self.fetch_refspec)
+                                   tag=self.fetch_refspec,
+                                   **self.srctar_make_opts)
 
         self.srctar = srctarball.srctar
         return bool(self.srctar)

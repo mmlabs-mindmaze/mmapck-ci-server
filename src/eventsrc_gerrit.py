@@ -32,7 +32,7 @@ class GerritBuildJob(BuildJob):
         super().__init__(project=project,
                          url=git_url,
                          refspec=change,
-                         clone_opts=opts)
+                         **opts)
         self.gerrit_instance = gerrit
         self.gerrit_change = change
 
