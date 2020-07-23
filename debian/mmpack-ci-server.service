@@ -5,7 +5,7 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/default/mmpack-ci-server
 ExecStartPre=/usr/bin/test -e $CONFFILE
-ExecStart=/usr/bin/python3 /usr/share/mmpack-ci-server/main.py --config=$CONFFILE
+ExecStart=/usr/bin/python3 /usr/share/mmpack-ci-server/main.py -c $CONFFILE
 StandardOutput=null
 StandardError=null
 User=mmpack-builder
