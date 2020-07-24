@@ -1,10 +1,10 @@
-logpath: /var/lib/mmpack-builder/mmpack-repos/mmpack-ci-server.log
+logpath: /var/lib/mmpack-ci-server/mmpack-repos/mmpack-ci-server.log
 repositories:
     projecta:
         amd64-debian:
-            path: /var/lib/mmpack-builder/mmpack-repos/debian
+            path: /var/lib/mmpack-ci-server/mmpack-repos/debian
         amd64-windows:
-            path: /var/lib/mmpack-builder/mmpack-repos/windows
+            path: /var/lib/mmpack-ci-server/mmpack-repos/windows
 dependency-repositories:
     project-a:
         amd64-debian:
@@ -30,6 +30,7 @@ eventsrc:
         type: gerrit
         hostname: gerrit.server.com
         username: gerrit-user
+        keyfile: /var/lib/mmpack-ci-server/keys/gerrit_id_rsa
 rules:
     only-linux:
         upload: projecta
