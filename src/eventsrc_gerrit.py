@@ -17,22 +17,15 @@ class GerritBuildJob(BuildJob):
     Class encapsulating a build job generated through gerrit stream-events
     command
     """
-    def __init__(self, gerrit: Gerrit, gerrit_event: dict):
+    def __init__(self, clone_url: str, clone_opts: Dict[str, str],
+                 gerrit: Gerrit, gerrit_event: dict):
         project = gerrit_event['change']['project']
         change = gerrit_event['patchSet']['revision']
 
-        git_url = 'ssh://{}@{}:{:d}/{}'.format(gerrit.username,
-                                               gerrit.hostname,
-                                               int(gerrit.port),
-                                               project)
-        opts = {}
-        if gerrit.keyfile:
-            opts['git_ssh_cmd'] = 'ssh -i ' + gerrit.keyfile
-
         super().__init__(project=project,
-                         url=git_url,
+                         url='{}/{}'.format(clone_url, project),
                          refspec=change,
-                         **opts)
+                         **clone_opts)
         self.gerrit_instance = gerrit
         self.gerrit_change = change
 
@@ -78,18 +71,37 @@ class GerritEventSource(EventSource):
         Args:
             @scheduler: scheduler to which job must be added
             @config: dictionary configuring the connection to gerrit. Allowed
-                keys are 'hostname', 'username', 'port' and 'keyfile'
+                keys are 'hostname', 'username', 'port', 'keyfile' and
+                'clone_url'
         """
-        super().__init__(scheduler)
+        # Create connection to gerrit command line
         cfg = subdict(config, ['hostname', 'username', 'port', 'keyfile'])
-        self.gerrit_instance = Gerrit(**cfg)
+        gerrit = Gerrit(**cfg)
+
+        # determine settings for git clone when a project must be build
+        clone_opts = {}
+        clone_url = config.get('clone_url')
+        if not clone_url:
+            clone_url = 'ssh://{}@{}:{:d}'.format(gerrit.username,
+                                                  gerrit.hostname,
+                                                  int(gerrit.port))
+            if gerrit.keyfile:
+                clone_opts['git_ssh_cmd'] = 'ssh -i ' + gerrit.keyfile
+
+        super().__init__(scheduler)
+        self.gerrit_instance = gerrit
+        self.clone_url = clone_url
+        self.clone_opts = clone_opts
 
     def _handle_gerrit_event(self, event: dict):
         do_build, do_upload = _trigger_build(event)
         if not do_build:
             return
 
-        job = GerritBuildJob(self.gerrit_instance, event)
+        job = GerritBuildJob(clone_url=self.clone_url,
+                             clone_opts=self.clone_opts,
+                             gerrit=self.gerrit_instance,
+                             gerrit_event=event)
         job.do_upload = do_upload
         self.add_job(job)
 
