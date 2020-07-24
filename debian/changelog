@@ -1,3 +1,9 @@
+mmpack-ci-server (0.0.2) unstable; urgency=medium
+
+  * Fix systemd service unit 
+
+ -- Nicolas Bourdaud <nicolas.bourdaud@gmail.com>  Fri, 24 Jul 2020 09:58:01 +0200
+
 mmpack-ci-server (0.0.1) unstable; urgency=medium
 
   * Initial release.
