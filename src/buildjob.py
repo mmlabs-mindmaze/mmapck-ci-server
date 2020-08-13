@@ -51,6 +51,7 @@ class BuildJob:
                                    outdir=self.pkgdir,
                                    path_url=self.url,
                                    tag=self.fetch_refspec,
+                                   version_from_vcs=self.adjust_version,
                                    **self.srctar_make_opts)
 
         self.srctar = srctarball.srctar

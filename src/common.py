@@ -58,3 +58,13 @@ def subdict(adict: dict, keys: Iterable) -> dict:
     Return a subset of adict dictionary containing only keys passed in argument
     """
     return {k: v for k, v in adict.items() if k in keys}
+
+
+def str2bool(value: str) -> bool:
+    """
+    interpret value and convert to bool
+    """
+    if not value:
+        return False
+
+    return value.lower() in ['true', 'yes', 'y', '1']

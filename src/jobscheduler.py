@@ -11,7 +11,7 @@ from repository import Repository
 
 from builder import Builder
 from buildjob import BuildJob
-from common import log_info, log_error
+from common import log_info, log_error, str2bool
 
 
 class FilterRule:
@@ -25,6 +25,8 @@ class FilterRule:
         self.regex_map = {k: re.compile(p) for k, p in patterns.items()}
         self.upload_repo = upload
         self.deps_repos = rule_cfg.get('dependency-repositories', [])
+
+        self.adjust_version = str2bool(rule_cfg.get('adjust-srcpkg-version'))
 
         # get archs if specified, otherwise take all archs in the uploaded repo
         self.archs = rule_cfg.get('built-architectures',
@@ -258,6 +260,7 @@ class JobScheduler(Thread):
                 job.upload_repo = rule.upload_repo
                 job.archs = rule.archs
                 job.deps_repos = rule.deps_repos
+                job.adjust_version = rule.adjust_version
                 break
 
         if not job.archs:
