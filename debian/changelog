@@ -1,10 +1,10 @@
-mmpack-ci-server (0.0.3) UNRELEASED; urgency=medium
+mmpack-ci-server (0.0.3) unstable; urgency=medium
 
   * Fix CONFFILE in /etc/default/mmapck-ci-server to match the folder created
     at postinst.
   * minimal mmpack version: 0.4.0
 
- -- Nicolas Bourdaud <nicolas.bourdaud@gmail.com>  Fri, 24 Jul 2020 10:09:42 +0200
+ -- Nicolas Bourdaud <nicolas.bourdaud@gmail.com>  Thu, 13 Aug 2020 19:17:08 +0200
 
 mmpack-ci-server (0.0.2) unstable; urgency=medium
 
