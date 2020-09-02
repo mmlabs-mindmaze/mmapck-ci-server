@@ -8,9 +8,8 @@ import shutil
 from glob import glob
 from tempfile import mkdtemp
 
-from mmpack_build.common import yaml_load, yaml_serialize
+import yaml
 from mmpack_build.source_tarball import SourceTarball
-
 
 
 class BuildJob:
@@ -84,7 +83,8 @@ class BuildJob:
 
         merged = {}
         for manifest_file in glob(self.pkgdir + '/*.mmpack-manifest'):
-            elt_data = yaml_load(manifest_file)
+            elt_data = yaml.load(open(manifest_file, 'rb'),
+                                 Loader=yaml.BaseLoader)
             if not merged:
                 merged = elt_data
 
@@ -100,5 +100,9 @@ class BuildJob:
         filename = '{}/{}_{}.mmpack-manifest'.format(self.pkgdir,
                                                      merged['name'],
                                                      merged['version'])
-        yaml_serialize(merged, filename)
+        yaml.dump(merged,
+                  open(filename, 'w+', newline='\n'),
+                  default_style='',
+                  allow_unicode=True,
+                  indent=4)
         return filename
