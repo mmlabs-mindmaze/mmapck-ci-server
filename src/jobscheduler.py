@@ -10,13 +10,14 @@ from threading import Thread, Lock
 from repository import Repository
 
 from builder import Builder
-from buildjob import BuildJob
+from buildjob import BuildJob, generate_buildjobs
+from buildrequest import BuildRequest
 from common import log_info, log_error, str2bool
 
 
 class FilterRule:
     """
-    Class used to represent the action to take when a matching job is added
+    Class used to represent the action to take when a matching build request is added
     """
     def __init__(self, rule_cfg: dict, global_cfg: dict):
         patterns = rule_cfg.get('patterns', {})
@@ -32,12 +33,12 @@ class FilterRule:
         self.archs = rule_cfg.get('built-architectures',
                                   list(global_cfg['repositories'][upload].keys()))
 
-    def match(self, job: BuildJob) -> bool:
+    def match(self, request: BuildRequest) -> bool:
         """
-        Test whether a job fulfills the criteria of the FilterRule
+        Test whether a build request fulfills the criteria of the FilterRule
         """
         for key, regex in self.regex_map.items():
-            attrvalue = getattr(job, key, None)
+            attrvalue = getattr(request, key, None)
             if not (attrvalue and regex.fullmatch(attrvalue)):
                 return False
 
@@ -251,27 +252,19 @@ class JobScheduler(Thread):
         self.queue.put(None)
         self.join()
 
-    def add_job(self, job: BuildJob):
+    def add_build_request(self, req):
         """
         Add a job in the queue of processing
         """
         for rule in self.rules.values():
-            if rule.match(job):
-                job.upload_repo = rule.upload_repo
-                job.archs = rule.archs
-                job.deps_repos = rule.deps_repos
-                job.srctar_make_opts['version_from_vcs'] = rule.adjust_version
+            if rule.match(req):
+                req.upload_repo = rule.upload_repo
+                req.archs = rule.archs
+                req.deps_repos = rule.deps_repos
+                req.srctar_make_opts['version_from_vcs'] = rule.adjust_version
+
+                # Generate mmpack sources
+                for job in generate_buildjobs(req):
+                    self._schedule_job_for_build(job)
+
                 break
-
-        if not job.archs:
-            return
-
-        # Generate mmpack source
-        log_info('making source package for {}'.format(job))
-        done = job.make_srcpkg()
-        if not done:
-            log_info('No mmpack packaging, build cancelled')
-            return
-        log_info('Done')
-
-        self._schedule_job_for_build(job)

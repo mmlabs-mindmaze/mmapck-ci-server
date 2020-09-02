@@ -3,6 +3,7 @@
 common usage facilities
 """
 
+from hashlib import sha256
 from typing import Iterable
 
 import logging
@@ -68,3 +69,15 @@ def str2bool(value: str) -> bool:
         return False
 
     return value.lower() in ['true', 'yes', 'y', '1']
+
+
+def sha256sum(filename: str) -> str:
+    """
+    compute the SHA-256 hash of a file
+
+    Returns:
+        a string containing hexadecimal value of hash
+    """
+    sha = sha256()
+    sha.update(open(filename, 'rb').read())
+    return sha.hexdigest()

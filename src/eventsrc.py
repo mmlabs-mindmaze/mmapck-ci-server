@@ -3,7 +3,7 @@
 Source for handling scanning change in repository
 """
 
-from buildjob import BuildJob
+from buildrequest import BuildRequest
 from jobscheduler import JobScheduler
 
 
@@ -14,11 +14,11 @@ class EventSource:
     def __init__(self, scheduler: JobScheduler):
         self.scheduler = scheduler
 
-    def add_job(self, job: BuildJob):
+    def add_build_request(self, req: BuildRequest):
         """
-        Queue a job to the scheduler
+        Queue a build request to the scheduler
         """
-        self.scheduler.add_job(job)
+        self.scheduler.add_build_request(req)
 
     def run(self):
         """

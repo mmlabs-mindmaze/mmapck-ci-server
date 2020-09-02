@@ -5,14 +5,15 @@ Source build event using Gerrit
 
 from typing import Dict
 
-from buildjob import BuildJob
+from buildrequest import BuildRequest
 from common import log_error, subdict
 from eventsrc import EventSource
 from jobscheduler import JobScheduler
 from gerrit import Gerrit
 
 
-class GerritBuildJob(BuildJob):
+class GerritBuildRequest(BuildRequest):
+    # pylint: disable=too-few-public-methods
     """
     Class encapsulating a build job generated through gerrit stream-events
     command
@@ -98,12 +99,12 @@ class GerritEventSource(EventSource):
         if not do_build:
             return
 
-        job = GerritBuildJob(clone_url=self.clone_url,
-                             clone_opts=self.clone_opts,
-                             gerrit=self.gerrit_instance,
-                             gerrit_event=event)
-        job.do_upload = do_upload
-        self.add_job(job)
+        req = GerritBuildRequest(clone_url=self.clone_url,
+                                 clone_opts=self.clone_opts,
+                                 gerrit=self.gerrit_instance,
+                                 gerrit_event=event)
+        req.do_upload = do_upload
+        self.add_build_request(req)
 
     def run(self):
         self.gerrit_instance.startWatching()

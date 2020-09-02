@@ -7,6 +7,7 @@ project('mmpack-ci-server', 'c',
 mmpack_ci_server_files = files(
     'src/builder.py',
     'src/buildjob.py',
+    'src/buildrequest.py',
     'src/common.py',
     'src/eventsrc_gerrit.py',
     'src/eventsrc.py',
