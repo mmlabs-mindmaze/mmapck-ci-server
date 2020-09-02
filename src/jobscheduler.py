@@ -260,7 +260,7 @@ class JobScheduler(Thread):
                 job.upload_repo = rule.upload_repo
                 job.archs = rule.archs
                 job.deps_repos = rule.deps_repos
-                job.adjust_version = rule.adjust_version
+                job.srctar_make_opts['version_from_vcs'] = rule.adjust_version
                 break
 
         if not job.archs:
