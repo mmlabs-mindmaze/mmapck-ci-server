@@ -6,17 +6,12 @@ Access to the build servers (build slaves)
 import os
 import stat
 import time
-import warnings
 from typing import Dict, List
 
 import paramiko
-from cryptography.utils import DeprecatedIn25
 
 from buildjob import BuildJob
 from common import log_error, subdict
-
-# To silence warnings raised in paramiko implementation
-warnings.simplefilter('ignore', DeprecatedIn25)
 
 
 # timeout values
