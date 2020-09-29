@@ -100,13 +100,15 @@ class _BuilderQueue(Thread):
 
     def _process_job(self, scheduled_job: _BuildScheduledJob):
         builder = self.builder
+        job = scheduled_job.job
         success = True
+        log_info(f'{job} build started on {builder}')
         try:
-            builder.build(scheduled_job.job)
-            msg = 'build on {} succeed'.format(builder)
+            builder.build(job)
+            msg = f'{job} build on {builder}: succeed'
             log_info(msg)
         except Exception as exception:  # pylint: disable=broad-except
-            msg = 'build on {} failed: {}'.format(builder, str(exception))
+            msg = f'{job} build on {builder} failed: {str(exception)}'
             log_error(msg)
             success = False
         scheduled_job.build_done(success, msg)
@@ -188,7 +190,7 @@ class JobScheduler(Thread):
             return
 
         if not job.do_upload:
-            job.notify_result(True, 'Packages upload skipped')
+            job.notify_result(True, f'{job}: upload skipped')
             return
 
         modified_repos = []
@@ -205,13 +207,13 @@ class JobScheduler(Thread):
             for repo in modified_repos:
                 repo.rollback()
             job.notify_result(False, str(exception))
-            log_error('upload cancelled')
+            log_error(f'{job} upload cancelled')
             return
 
         # Commit changes in modified repositories
         for repo in modified_repos:
             repo.commit()
-            log_info('Arch {} uploaded on {}'.format(repo.arch, repo.name))
+            log_info(f'{job} uploaded on {repo}')
 
         job.notify_result(True)
 

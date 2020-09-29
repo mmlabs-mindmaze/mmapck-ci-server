@@ -124,7 +124,7 @@ def generate_buildjobs(req: BuildRequest) -> Iterator[BuildJob]:
                 break
             job = BuildJob(req, fields[0], fields[1], fields[2])
             num_prj += 1
-            log_info(f'{job.prj_name} {job.version} {job.srchash}')
+            log_info(f'... {job.prj_name} {job.version} {job.srchash}')
             yield job
 
         if proc.wait() != 0:

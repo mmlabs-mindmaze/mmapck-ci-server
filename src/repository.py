@@ -24,6 +24,9 @@ class Repository:
         self.name = name
         self.arch = arch
 
+    def __repr__(self):
+        return f'Repo {self.name} Arch {self.arch}'
+
     def _send_cmd(self, cmd: str):
         # Write newline terminated command to stdin of child
         print(cmd, file=self.proc.stdin, flush=True)
