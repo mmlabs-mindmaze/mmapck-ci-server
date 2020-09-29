@@ -16,7 +16,8 @@ class Repository:
         cmd_argv = ['mmpack-modifyrepo',
                     '--path=' + path,
                     '--arch=' + arch,
-                    'batch']
+                    'batch',
+                    '--initial-change=false']
 
         proc = Popen(cmd_argv, shell=False,
                      stdin=PIPE, stdout=PIPE, universal_newlines=True)
@@ -52,14 +53,20 @@ class Repository:
         """
         self._send_cmd('ADD ' + manifest_file)
 
+    def begin(self):
+        """
+        Commit stagged changes to repository
+        """
+        self._send_cmd('BEGIN_CHANGES')
+
     def commit(self):
         """
         Commit stagged changes to repository
         """
-        self._send_cmd('COMMIT')
+        self._send_cmd('COMMIT_CHANGES')
 
     def rollback(self):
         """
         rollback stagged changes to repository
         """
-        self._send_cmd('ROLLBACK')
+        self._send_cmd('ROLLBACK_CHANGES')

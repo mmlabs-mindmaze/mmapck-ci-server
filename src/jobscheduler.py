@@ -194,16 +194,20 @@ class JobScheduler(Thread):
             return
 
         modified_repos = []
+        # begin changes in modified repositories (this gets the lock on those)
+        for arch in job.archs:
+            repo = self.repos[job.upload_repo][arch]
+            repo.begin()
+            modified_repos.append(repo)
+
         try:
             # Update repositories
             manifest = job.merge_manifests()
-            for arch in job.archs:
-                repo = self.repos[job.upload_repo][arch]
-                modified_repos.append(repo)
+            for repo in modified_repos:
                 repo.add(manifest)
 
         except Exception as exception:  # pylint: disable=broad-except
-            # Rollback changes in repositories modified so far
+            # Rollback changes in modified repositories
             for repo in modified_repos:
                 repo.rollback()
             job.notify_result(False, str(exception))
