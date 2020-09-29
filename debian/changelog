@@ -1,3 +1,10 @@
+mmpack-ci-server (0.0.4) UNRELEASED; urgency=medium
+
+  * Stop using mmpack-build python package. Now depend on "mmpack-build
+    mksource" command.
+
+ -- Nicolas Bourdaud <nicolas.bourdaud@gmail.com>  Tue, 29 Sep 2020 14:15:30 +0200
+
 mmpack-ci-server (0.0.3) unstable; urgency=medium
 
   * Fix CONFFILE in /etc/default/mmapck-ci-server to match the folder created

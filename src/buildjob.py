@@ -6,14 +6,14 @@ Representation of a build job
 import os
 import shutil
 from glob import glob
+from subprocess import PIPE, Popen
 from tempfile import mkdtemp, TemporaryDirectory
 from typing import Iterator
 
 import yaml
-from mmpack_build.source_tarball import SourceTarball
 
 from buildrequest import BuildRequest
-from common import log_info, sha256sum
+from common import log_info, log_error, sha256sum
 
 
 class BuildJob:
@@ -98,16 +98,36 @@ def generate_buildjobs(req: BuildRequest) -> Iterator[BuildJob]:
     log_info(f'making source packages for {req}...')
 
     with TemporaryDirectory(prefix='mmpack-src') as tmpdir:
-        srctarball = SourceTarball(method='git',
-                                   outdir=tmpdir,
-                                   path_url=req.url,
-                                   tag=req.fetch_refspec,
-                                   **req.srctar_make_opts)
+        args = [
+            'mmpack-build',
+            '--outdir=' + tmpdir,
+            '--builddir=' + tmpdir + '/build',
+            'mksource',
+            '--git',
+            '--tag=' + req.fetch_refspec,
+        ]
+
+        if req.srctar_make_opts.get('version_from_vcs', False):
+            args.append('--update-version-from-vcs')
+
+        if req.srctar_make_opts.get('only_modified', True):
+            args.append('--multiproject-only-modified')
+
+        args.append(req.url)
+
+        proc = Popen(args, stdout=PIPE, encoding='utf-8')
+
         num_prj = 0
-        for prj in srctarball.iter_mmpack_srcs():
-            job = BuildJob(req, prj.name, prj.version, prj.tarball)
+        for line in proc.stdout:
+            fields = line.strip().split()
+            if len(fields) != 3:
+                break
+            job = BuildJob(req, fields[0], fields[1], fields[2])
             num_prj += 1
             log_info(f'{job.prj_name} {job.version} {job.srchash}')
             yield job
 
-        log_info('... Done' if num_prj else 'No mmpack packaging')
+        if proc.wait() != 0:
+            log_error(f'{args} failed')
+        else:
+            log_info('... Done' if num_prj else 'No mmpack packaging')
