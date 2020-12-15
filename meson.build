@@ -1,5 +1,5 @@
 project('mmpack-ci-server', 'c',
-        version: '0.0.3',
+        version: '0.0.4',
         license: 'GPL3',
         meson_version: '>= 0.49',
 )
