@@ -66,8 +66,8 @@ class BuildJob:
 
         merged = {}
         for manifest_file in glob(self.pkgdir + '/*.mmpack-manifest'):
-            elt_data = yaml.load(open(manifest_file, 'rb'),
-                                 Loader=yaml.BaseLoader)
+            with open(manifest_file, 'rb') as fileobj:
+                elt_data = yaml.load(fileobj, Loader=yaml.BaseLoader)
             if not merged:
                 merged = elt_data
 
@@ -83,11 +83,13 @@ class BuildJob:
         filename = '{}/{}_{}.mmpack-manifest'.format(self.pkgdir,
                                                      merged['name'],
                                                      merged['version'])
-        yaml.dump(merged,
-                  open(filename, 'w+', newline='\n'),
-                  default_style='',
-                  allow_unicode=True,
-                  indent=4)
+
+        with open(filename, 'w+', newline='\n') as yamlfile:
+            yaml.dump(merged,
+                      yamlfile,
+                      default_style='',
+                      allow_unicode=True,
+                      indent=4)
         return filename
 
 

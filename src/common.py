@@ -79,5 +79,6 @@ def sha256sum(filename: str) -> str:
         a string containing hexadecimal value of hash
     """
     sha = sha256()
-    sha.update(open(filename, 'rb').read())
+    with open(filename, 'rb') as fileobj:
+        sha.update(fileobj.read())
     return sha.hexdigest()
