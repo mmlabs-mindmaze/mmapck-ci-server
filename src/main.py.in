@@ -20,7 +20,7 @@ this explains some of the broad excepts, and flags like ignore_errors
 from argparse import ArgumentParser, RawDescriptionHelpFormatter
 from typing import Dict
 
-from mmpack_build.common import yaml_load
+import yaml
 
 from common import init_logger
 from eventsrc import EventSource
@@ -59,7 +59,8 @@ class CIApplication:
     """
     # pylint: disable=too-few-public-methods
     def __init__(self, filename: str):
-        cfg = yaml_load(filename)
+        with open(filename, 'rb') as fileobj:
+            cfg = yaml.load(fileobj, Loader=yaml.BaseLoader)
 
         init_logger(cfg.get('logpath', DEFAULT_LOGPATH))
 
