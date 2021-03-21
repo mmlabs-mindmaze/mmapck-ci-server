@@ -8,6 +8,7 @@ from typing import Iterable
 
 import logging
 import os
+from logging.handlers import TimedRotatingFileHandler
 
 
 LOGGER = None
@@ -27,9 +28,7 @@ def init_logger(log_file):
     global LOGGER  # pylint: disable=global-statement
 
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    log_handler = logging.handlers.TimedRotatingFileHandler(log_file,
-                                                            when='D',
-                                                            backupCount=30)
+    log_handler = TimedRotatingFileHandler(log_file, when='D', backupCount=30)
 
     formatter = logging.Formatter("%(asctime)s: %(levelname)s: %(message)s",
                                   "%Y-%m-%d %H:%M:%S")
