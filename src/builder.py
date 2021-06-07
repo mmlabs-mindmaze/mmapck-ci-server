@@ -166,7 +166,6 @@ class Builder:
         script = ['set -e',
                   'workdir={}'.format(workdir),
                   'srctar={}'.format(srctar),
-                  'export XDG_DATA_HOME=$workdir',
                   'tmp_prefix=$workdir/tmp-prefix',
                   'mmpack mkprefix --force $tmp_prefix']
 
@@ -179,7 +178,10 @@ class Builder:
             script.append('mmpack -p $tmp_prefix repo add {} {}'
                           .format(reponame, url))
 
-        script.append('mmpack-build pkg-create -y'
+        script.append('mmpack-build'
+                      f' --outdir={workdir}/mmpack-packages'
+                      f' --builddir={workdir}/build'
+                      ' pkg-create -y'
                       ' --prefix=$tmp_prefix'
                       ' --build-deps'
                       ' --skip-build-tests'
