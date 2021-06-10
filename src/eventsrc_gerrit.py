@@ -38,26 +38,30 @@ def _trigger_build(event):
     """
     test whether an event is a merge event, or a manual trigger
     """
+    do_build = False
+    do_upload = False
+    build_all = False
     try:
         evttype = event['type']
-        if evttype not in ('change-merged', 'comment-added'):
-            return (False, False)
-
         if evttype == 'change-merged':
-            return (True, True)
+            do_build = True
+            do_upload = True
+        elif evttype == 'comment-added':
+            comment = event['comment']
+            if 'MMPACK_UPLOAD_BUILD' in comment:
+                do_build = True
+                do_upload = True
 
-        comment = event['comment']
+            if 'MMPACK_BUILD' in comment:
+                do_build = True
 
-        if 'MMPACK_UPLOAD_BUILD' in comment:
-            return (True, True)
-
-        if 'MMPACK_BUILD' in comment:
-            return (True, False)
+            if 'BUILD_ALL_SUBPROJECTS' in comment:
+                build_all = True
 
     except KeyError:
         pass
 
-    return (False, False)
+    return (do_build, do_upload, build_all)
 
 
 class GerritEventSource(EventSource):
@@ -95,7 +99,7 @@ class GerritEventSource(EventSource):
         self.clone_opts = clone_opts
 
     def _handle_gerrit_event(self, event: dict):
-        do_build, do_upload = _trigger_build(event)
+        do_build, do_upload, build_all = _trigger_build(event)
         if not do_build:
             return
 
@@ -104,6 +108,8 @@ class GerritEventSource(EventSource):
                                  gerrit=self.gerrit_instance,
                                  gerrit_event=event)
         req.do_upload = do_upload
+        if build_all:
+                req.srctar_make_opts['only_modified'] = False
         self.add_build_request(req)
 
     def run(self):
