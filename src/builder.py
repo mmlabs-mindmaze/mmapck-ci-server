@@ -63,6 +63,7 @@ class SSH:
         connect to host, and executes given command
         """
         client = None
+        buildlog = ''
         try:
             client = self._make_client()
             stdin, stdout, stderr = client.exec_command('sh -ls',
@@ -75,7 +76,7 @@ class SSH:
                 # flush stdout and stderr while the remote program has not
                 # returned. Read by blocks of max 16KB.
                 if channel.recv_ready():
-                    stdout.channel.recv(1 << 14)
+                    buildlog += stdout.channel.recv(1 << 14)
                 if channel.recv_stderr_ready():
                     stderr.channel.recv_stderr(1 << 14)
                 time.sleep(0.1)  # sleep 100 ms
@@ -87,7 +88,7 @@ class SSH:
             if client:
                 client.close()
         if ret:
-            errmsg = 'SSH error executing {}'.format(command)
+            errmsg = f'SSH error executing {command}\n\nOutput:\n{buildlog}\n'
             log_error(errmsg)
             raise Exception(errmsg)
 
@@ -164,6 +165,7 @@ class Builder:
     def _gen_build_script(self, workdir: str, srctar: str,
                           repo_list: List[str]):
         script = ['set -e',
+                  'exec 2>&1',
                   'workdir={}'.format(workdir),
                   'srctar={}'.format(srctar),
                   'tmp_prefix=$workdir/tmp-prefix',
