@@ -12,7 +12,7 @@ Package: mmpack-ci-server
 Architecture: all
 Pre-Depends: ${misc:Pre-Depends}, adduser
 Depends: mmpack-repo-tools (>= 0.3.0),
- mmpack-build (>= 0.4.0),
+ mmpack-build (>= 0.7.0),
  ${misc:Depends}, ${python3:Depends}
 Description: mmpack continuous integration server
  This package provides the infrastructure for handling the build,

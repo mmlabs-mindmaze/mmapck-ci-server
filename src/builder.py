@@ -164,32 +164,25 @@ class Builder:
 
     def _gen_build_script(self, workdir: str, srctar: str,
                           repo_list: List[str]):
-        script = ['set -e',
-                  'exec 2>&1',
-                  'workdir={}'.format(workdir),
-                  'srctar={}'.format(srctar),
-                  'tmp_prefix=$workdir/tmp-prefix',
-                  'mmpack mkprefix --force $tmp_prefix']
+        cmd = ['mmpack-build']
 
         # Add repositories for dependencies in temporary prefix
         for name in repo_list:
             url = self.deps_repos[name].get(self.arch)
             if not url:
                 continue
-            reponame = name + '/' + self.arch
-            script.append('mmpack -p $tmp_prefix repo add {} {}'
-                          .format(reponame, url))
+            cmd.append(f'--repo-url={url}')
 
-        script.append('mmpack-build'
-                      f' --outdir={workdir}/mmpack-packages'
-                      f' --builddir={workdir}/build'
-                      ' pkg-create -y'
-                      ' --prefix=$tmp_prefix'
-                      ' --build-deps'
-                      ' --skip-build-tests'
-                      ' --mmpack-src $srctar')
+        cmd += [
+            f'--outdir={workdir}/mmpack-packages',
+            f'--builddir={workdir}/build',
+            'pkg-create',
+            '--skip-build-tests',
+            f'--mmpack-src {srctar}',
+            '2>&1',
+        ]
 
-        return '\n'.join(script)
+        return ' '.join(cmd)
 
     def build(self, job: BuildJob):
         """
