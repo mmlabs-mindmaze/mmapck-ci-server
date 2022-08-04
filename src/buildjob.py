@@ -113,7 +113,10 @@ def generate_buildjobs(req: BuildRequest) -> Iterator[BuildJob]:
             args.append('--update-version-from-vcs')
 
         if req.srctar_make_opts.get('only_modified', True):
-            args.append('--multiproject-only-modified')
+            arg = '--multiproject-only-modified'
+            if req.oldref is not None:
+                arg += f'={req.oldref}'
+            args.append(arg)
 
         args.append(req.url)
 

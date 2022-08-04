@@ -20,18 +20,25 @@ class GerritBuildRequest(BuildRequest):
     """
     def __init__(self, clone_url: str, clone_opts: Dict[str, str],
                  gerrit: Gerrit, gerrit_event: dict):
-        project = gerrit_event['change']['project']
-        branch = gerrit_event['change']['branch']
-        change = gerrit_event['patchSet']['revision']
-        oldref = gerrit_event['patchSet']['parents'][0]
+        if gerrit_event['type'] == 'ref-updated':
+            refupdate = gerrit_event['refUpdate']
+            project = refupdate['project']
+            branch = refupdate['refName'].removeprefix('refs/heads/')
+            ref = refupdate['newRev']
+            oldref = refupdate['oldRev']
+        else:
+            project = gerrit_event['change']['project']
+            branch = gerrit_event['change']['branch']
+            ref = gerrit_event['patchSet']['revision']
+            oldref = None
 
         super().__init__(project=project,
                          url='{}/{}'.format(clone_url, project),
-                         refspec=change,
+                         refspec=ref,
                          oldref=oldref,
                          **clone_opts)
         self.gerrit_instance = gerrit
-        self.gerrit_change = change
+        self.gerrit_change = ref
         self.branch = branch
 
     def notify_result(self, success: bool, message: str = None):
@@ -47,9 +54,11 @@ def _trigger_build(event):
     build_all = False
     try:
         evttype = event['type']
-        if evttype == 'change-merged':
-            do_build = True
-            do_upload = True
+        if evttype == 'ref-updated':
+            # Act only on branch head update
+            if event['refUpdate']['refName'].startswith('refs/heads/'):
+                do_build = True
+                do_upload = True
         elif evttype == 'comment-added':
             comment = event['comment']
             if 'MMPACK_UPLOAD_BUILD' in comment:
