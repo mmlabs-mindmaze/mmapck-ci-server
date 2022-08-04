@@ -2,7 +2,7 @@ Source: mmpack-ci-server
 Section: utils
 Priority: optional
 Maintainer: Nicolas Bourdaud <nicolas.bourdaud@gmail.com>
-Build-Depends: debhelper (>= 10), dh-python,
+Build-Depends: debhelper-compat (= 13), dh-python,
  meson,
  python3:any,
  python3-yaml, python3-paramiko
