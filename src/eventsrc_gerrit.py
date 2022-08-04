@@ -21,6 +21,7 @@ class GerritBuildRequest(BuildRequest):
     def __init__(self, clone_url: str, clone_opts: Dict[str, str],
                  gerrit: Gerrit, gerrit_event: dict):
         project = gerrit_event['change']['project']
+        branch = gerrit_event['change']['branch']
         change = gerrit_event['patchSet']['revision']
 
         super().__init__(project=project,
@@ -29,6 +30,7 @@ class GerritBuildRequest(BuildRequest):
                          **clone_opts)
         self.gerrit_instance = gerrit
         self.gerrit_change = change
+        self.branch = branch
 
     def notify_result(self, success: bool, message: str = None):
         self.gerrit_instance.review(self.project, self.gerrit_change, message)
