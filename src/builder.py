@@ -76,10 +76,14 @@ class SSH:
                 # flush stdout and stderr while the remote program has not
                 # returned. Read by blocks of max 16KB.
                 if channel.recv_ready():
-                    buildlog += stdout.channel.recv(1 << 14)
+                    buildlog += stdout.channel.recv(1 << 14).decode()
                 if channel.recv_stderr_ready():
                     stderr.channel.recv_stderr(1 << 14)
                 time.sleep(0.1)  # sleep 100 ms
+
+            # Get remaining of buildlog
+            while channel.recv_ready():
+                buildlog += stdout.channel.recv(1 << 14).decode()
 
             stdout.close()
             stderr.close()
