@@ -118,7 +118,7 @@ def generate_buildjobs(req: BuildRequest) -> Iterator[BuildJob]:
                 arg += f'={req.oldref}'
             args.append(arg)
 
-        args.append(req.url)
+        args += ['--', req.url]
 
         proc = Popen(args, stdout=PIPE, encoding='utf-8')
 
