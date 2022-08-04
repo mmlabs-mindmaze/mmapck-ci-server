@@ -23,10 +23,12 @@ class GerritBuildRequest(BuildRequest):
         project = gerrit_event['change']['project']
         branch = gerrit_event['change']['branch']
         change = gerrit_event['patchSet']['revision']
+        oldref = gerrit_event['patchSet']['parents'][0]
 
         super().__init__(project=project,
                          url='{}/{}'.format(clone_url, project),
                          refspec=change,
+                         oldref=oldref,
                          **clone_opts)
         self.gerrit_instance = gerrit
         self.gerrit_change = change

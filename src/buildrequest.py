@@ -3,6 +3,8 @@
 Representation of a request to build a commit
 """
 
+from typing import Optional
+
 
 class BuildRequest:
     # pylint: disable=too-many-instance-attributes
@@ -11,11 +13,14 @@ class BuildRequest:
     in turn spawn in later stages build jobs. If the repository is a
     multiproject, there might several build jobs for one build request.
     """
-    def __init__(self, project: str, url: str, refspec: str, **kwargs):
+    def __init__(self, project: str, url: str,
+                 refspec: str, oldref: Optional[str] = None,
+                 **kwargs):
         self.project = project
         self.fetch_refspec = refspec
         self.url = url
         self.ref = refspec
+        self.oldref = oldref
         self.do_upload = True
         self.upload_repo = ''
         self.archs = []
